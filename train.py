@@ -4,9 +4,9 @@ import numpy as np
 from typing import Dict, List, Tuple
 
 from config import GPTConfig
-from corpus import build_corpus
-from tokenizer import CharTokenizer
-from gpt import GPT
+from data.corpus import build_corpus
+from data.tokenizer import CharTokenizer
+from model.gpt import GPT
 
 
 # ────────────────────────────────────────

@@ -1,9 +1,9 @@
 from __future__ import annotations
 import numpy as np
 from typing import Dict, List, Optional, Tuple
-from embedding import positional_encoding, embedding_forward, embedding_backward
-from transformer_block import TransformerBlock, he_init, layer_norm_forward, layer_norm_backward
-from attention import causal_mask, dropout_forward, dropout_backward
+from model.embedding import positional_encoding, embedding_forward, embedding_backward
+from model.transformer_block import TransformerBlock, he_init, layer_norm_forward, layer_norm_backward
+from model.attention import causal_mask, dropout_forward, dropout_backward
 
 
 class GPT:

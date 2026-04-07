@@ -1,7 +1,7 @@
 from __future__ import annotations
 import numpy as np
 from typing import Dict
-from attention import (
+from model.attention import (
     multi_head_attention_forward,
     multi_head_attention_backward,
     dropout_forward,

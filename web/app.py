@@ -1,26 +1,37 @@
+"""Flask web sunucusu — Mini GPT Türkçe Metin Tamamlama."""
 from __future__ import annotations
-import json, traceback
+import json, os, sys, traceback
+
+# Proje kökünü Python path'ine ekle
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 import numpy as np
 from flask import Flask, jsonify, request, send_from_directory
-from tokenizer import CharTokenizer
-from gpt import GPT
 
-app = Flask(__name__, static_folder="static")
-MODEL = None
-TOKENIZER = None
-INFO = None
+from data.tokenizer import CharTokenizer
+from model.gpt import GPT
+
+# static klasörü web/ altında
+app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), "static"))
+
+MODEL: GPT | None = None
+TOKENIZER: CharTokenizer | None = None
+INFO: dict | None = None
+
+# checkpoints/ proje kökünde
+_ROOT = os.path.dirname(os.path.dirname(__file__))
+_CKPT = os.path.join(_ROOT, "checkpoints")
 
 
 def load_artifacts():
     global MODEL, TOKENIZER, INFO
     print("[boot] tokenizer yükleniyor...")
-    with open("checkpoints/tokenizer.json", "r", encoding="utf-8") as f:
+    with open(os.path.join(_CKPT, "tokenizer.json"), "r", encoding="utf-8") as f:
         stoi = json.load(f)["stoi"]
-    # itos anahtarları int olmalı
     TOKENIZER = CharTokenizer(stoi=stoi, itos={int(v): k for k, v in stoi.items()})
 
     print("[boot] train_info yükleniyor...")
-    with open("checkpoints/train_info.json", "r", encoding="utf-8") as f:
+    with open(os.path.join(_CKPT, "train_info.json"), "r", encoding="utf-8") as f:
         INFO = json.load(f)
 
     print("[boot] model ağırlıkları yükleniyor...")
@@ -33,7 +44,7 @@ def load_artifacts():
         INFO["context_length"],
         INFO.get("dropout", 0.1),
     )
-    MODEL.load_state_dict(dict(np.load("checkpoints/mini_gpt.npz")))
+    MODEL.load_state_dict(dict(np.load(os.path.join(_CKPT, "mini_gpt.npz"))))
     print(f"[boot] tamam — {MODEL.num_parameters():,} parametre yüklendi.")
 
 
@@ -46,7 +57,7 @@ def health():
 
 @app.route("/")
 def index():
-    return send_from_directory("static", "index.html")
+    return send_from_directory(app.static_folder, "index.html")
 
 
 @app.route("/info")
@@ -78,12 +89,9 @@ def generate():
             repetition_penalty=repetition_penalty,
             eos_id=TOKENIZER.eos_id,
         )
-
         new_ids = out[len(ids):]
         generated = TOKENIZER.decode(new_ids)
-        full_text = prompt + generated
-
-        return jsonify({"text": full_text, "generated": generated})
+        return jsonify({"text": prompt + generated, "generated": generated})
     except Exception as e:
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
